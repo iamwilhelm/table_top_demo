@@ -3,7 +3,7 @@ using System.Collections;
 
 public class InteractableItem : MonoBehaviour {
 
-	public Rigidbody rb;
+	private Rigidbody rb;
 	private bool currentlyInteracting;
 	private HandController attachedHand;
 	private Transform interactionPoint;
