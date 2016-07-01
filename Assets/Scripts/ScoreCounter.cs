@@ -3,6 +3,7 @@ using System.Collections;
 
 public class ScoreCounter : MonoBehaviour {
 
+	public TextMesh scorekeeper;
 	private int score;
 
 	// Use this for initialization
@@ -20,7 +21,7 @@ public class ScoreCounter : MonoBehaviour {
 
 	void OnTriggerExit(Collider collider) {
 		scorePoints(1);
-		Debug.Log("Score is now: " + getScore());
+		scorekeeper.text = getScore().ToString();
 	}
 
 	int getScore() {
