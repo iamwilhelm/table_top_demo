@@ -5,10 +5,12 @@ public class ScoreCounter : MonoBehaviour {
 
 	public TextMesh scorekeeper;
 	private int score;
+	private bool validEnter;
 
 	// Use this for initialization
 	void Start () {
 		resetScore();
+		this.validEnter = false;
 	}
 
 	// Update is called once per frame
@@ -16,12 +18,19 @@ public class ScoreCounter : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider collider) {
-		Debug.Log("entered hoop");
+		if (collider.attachedRigidbody.velocity.y < 0) {
+			this.validEnter = true;
+		} else {
+			this.validEnter = false;
+		}
 	}
 
 	void OnTriggerExit(Collider collider) {
-		scorePoints(1);
-		scorekeeper.text = getScore().ToString();
+		if (collider.attachedRigidbody.velocity.y < 0 && validEnter) {
+			scorePoints(1);
+			this.validEnter = false;
+			scorekeeper.text = getScore().ToString();
+		}
 	}
 
 	int getScore() {
