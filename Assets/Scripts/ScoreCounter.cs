@@ -4,6 +4,7 @@ using System.Collections;
 public class ScoreCounter : MonoBehaviour {
 
 	public TextMesh scorekeeper;
+	public ParticleSystem confetti;
 	private int score;
 	private bool validEnter;
 
@@ -29,7 +30,10 @@ public class ScoreCounter : MonoBehaviour {
 		if (collider.attachedRigidbody.velocity.y < 0 && validEnter) {
 			scorePoints(1);
 			this.validEnter = false;
+			// Set score
 			scorekeeper.text = getScore().ToString();
+			// Celebrate
+			confetti.Play();
 		}
 	}
 
