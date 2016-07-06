@@ -69,4 +69,5 @@ public class InteractableItem : MonoBehaviour {
 	public bool IsInteracting() {
 		return currentlyInteracting;
 	}
+
 }
