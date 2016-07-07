@@ -5,12 +5,20 @@ public class WandController : MonoBehaviour {
 
 	public SteamVR_TrackedObject trackedObj;
 	private SteamVR_Controller.Device controller;
+	public Transform spellSpawn;
 
 	public GameObject IncendioSpell;
-	public Transform spellSpawn;
+	public GameObject IncendioSpellIndicator;
+
+	private GameObject activeSpell;
+	private GameObject activeSpellIndicator;
+
+	private GameObject indicator;
 
 	// Use this for initialization
 	void Start () {
+		switchSpell("Incendio");
+		activateSpell();
 	}
 
 	// Update is called once per frame
@@ -23,9 +31,25 @@ public class WandController : MonoBehaviour {
 		}
 
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)) {
-			GameObject spell = Instantiate(IncendioSpell, spellSpawn.position, spellSpawn.rotation) as GameObject;
-			Destroy(spell, 5);
+			if (activeSpell == null) {
+				return;
+			}
+
+			GameObject spellProjectile = Instantiate(activeSpell, spellSpawn.position, spellSpawn.rotation) as GameObject;
+			Destroy(spellProjectile, 5);
 		}
 
+		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad)) {
+		}
+	}
+
+	void activateSpell() {
+		indicator = Instantiate(activeSpellIndicator, spellSpawn.position, spellSpawn.rotation) as GameObject;
+		indicator.transform.parent = transform;
+	}
+
+	void switchSpell(string spellName) {
+		activeSpell = IncendioSpell;
+		activeSpellIndicator = IncendioSpellIndicator;
 	}
 }
