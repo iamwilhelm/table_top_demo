@@ -6,7 +6,7 @@ public class WandController : MonoBehaviour {
 	public SteamVR_TrackedObject trackedObj;
 	private SteamVR_Controller.Device controller;
 
-	public GameObject fireballFab;
+	public GameObject IncendioSpell;
 	public Transform spellSpawn;
 
 	// Use this for initialization
@@ -23,8 +23,8 @@ public class WandController : MonoBehaviour {
 		}
 
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)) {
-			GameObject fireball = Instantiate(fireballFab, spellSpawn.position, spellSpawn.rotation) as GameObject;
-			Destroy(fireball, 5);
+			GameObject spell = Instantiate(IncendioSpell, spellSpawn.position, spellSpawn.rotation) as GameObject;
+			Destroy(spell, 5);
 		}
 
 	}
