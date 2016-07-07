@@ -9,6 +9,7 @@ public class SplashDamage : MonoBehaviour {
 
 	private ParticleSystem pSystem;
 	private ParticleSystem.Particle[] particles;
+	private Vector3 lastKnownPoint;
 
 	// Use this for initialization
 	void Start () {
@@ -20,14 +21,19 @@ public class SplashDamage : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update () {
+	void FixedUpdate () {
+		int numParticlesAlive = pSystem.GetParticles(particles);
+		if (numParticlesAlive > 0) {
+			lastKnownPoint = transform.TransformPoint(particles[0].position);
+		}
 	}
 
 	void OnParticleCollision(GameObject hitObject) {
-		RaycastHit hitInfo;
-		Physics.Raycast(transform.position, transform.forward, out hitInfo);
+		// TODO raycasting only works for static environments
+		// RaycastHit hitInfo;
+		// Physics.Raycast(transform.position, transform.forward, out hitInfo);
 
-		Collider[] colliders = Physics.OverlapSphere(hitInfo.point, this.radius);
+		Collider[] colliders = Physics.OverlapSphere(lastKnownPoint, this.radius);
 
 		foreach (Collider c in colliders) {
 			// skip all colliders without a rigidbody, so we don't explode static elements
@@ -35,7 +41,7 @@ public class SplashDamage : MonoBehaviour {
 			Debug.Log(c);
 
 			// push all within the splash damage radius out
-			c.GetComponent<Rigidbody>().AddExplosionForce(force, hitInfo.point, radius, 0.5f, ForceMode.Impulse);
+			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, 0.5f, ForceMode.Impulse);
 		}
 	}
 
