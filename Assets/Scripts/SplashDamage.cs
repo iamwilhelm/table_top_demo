@@ -6,6 +6,7 @@ public class SplashDamage : MonoBehaviour {
 
 	public float radius;
 	public float force;
+	public GameObject LingeringParticle;
 
 	private ParticleSystem pSystem;
 	private ParticleSystem.Particle[] particles;
@@ -34,15 +35,27 @@ public class SplashDamage : MonoBehaviour {
 		// Physics.Raycast(transform.position, transform.forward, out hitInfo);
 
 		Collider[] colliders = Physics.OverlapSphere(lastKnownPoint, this.radius);
-
 		foreach (Collider c in colliders) {
 			// skip all colliders without a rigidbody, so we don't explode static elements
 			if (c.GetComponent<Rigidbody>() == null) continue;
 			Debug.Log(c);
-
 			// push all within the splash damage radius out
 			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, 0.5f, ForceMode.Impulse);
 		}
+
+		// apply lingering particle effect for a smaller radius
+		Collider[] lcolliders = Physics.OverlapSphere(lastKnownPoint, this.radius / 4);
+		foreach (Collider c in lcolliders) {
+			// skip all colliders without a rigidbody, so we don't explode static elements
+			if (c.GetComponent<Rigidbody>() == null) continue;
+			Debug.Log(c);
+
+			// add lingering particle to collider
+			GameObject linger = Instantiate(LingeringParticle, c.transform.position, c.transform.rotation) as GameObject;
+			linger.transform.parent = c.transform;
+			Destroy(linger, 10);
+		}
+
 	}
 
 }

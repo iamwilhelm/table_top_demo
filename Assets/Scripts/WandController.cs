@@ -13,6 +13,9 @@ public class WandController : MonoBehaviour {
 	public GameObject StupefySpell;
 	public GameObject StupefySpellIndicator;
 
+	public GameObject AccioSpell;
+	public GameObject AccioSpellIndicator;
+
 	private GameObject activeSpell;
 	private GameObject activeSpellIndicator;
 
@@ -53,16 +56,20 @@ public class WandController : MonoBehaviour {
 				RayDamage raydamage = spellProjectile.GetComponent<RayDamage>();
 				raydamage.OnTrigger(this);
 				Destroy(spellProjectile, 5);
+			} else if (activeSpell == AccioSpell) {
+				GameObject spellProjectile = Instantiate(activeSpell, spellSpawn.position, spellSpawn.rotation) as GameObject;
+				RayDamage raydamage = spellProjectile.GetComponent<RayDamage>();
+				raydamage.OnTrigger(this);
+				Destroy(spellProjectile, 5);
 			}
-
 	}
 
 	void toggleSpell() {
 		if (activeSpell == IncendioSpell) {
-			Debug.Log("toggle to stupefy");
 			switchSpell("Stupefy");
-		} else {
-			Debug.Log("toggle to incendio");
+		} else if (activeSpell == StupefySpell) {
+			switchSpell("Accio");
+		} else if (activeSpell == AccioSpell) {
 			switchSpell("Incendio");
 		}
 		activateSpell();
@@ -81,6 +88,9 @@ public class WandController : MonoBehaviour {
 		} else if (spellName == "Stupefy") {
 			activeSpell = StupefySpell;
 			activeSpellIndicator = StupefySpellIndicator;
+		} else if (spellName == "Accio") {
+			activeSpell = AccioSpell;
+			activeSpellIndicator = AccioSpellIndicator;
 		}
 	}
 }
