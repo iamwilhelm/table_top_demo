@@ -40,14 +40,14 @@ public class SplashDamage : MonoBehaviour {
 			if (c.GetComponent<Rigidbody>() == null) continue;
 			Debug.Log(c);
 			// push all within the splash damage radius out
-			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, 0.5f, ForceMode.Impulse);
+			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, 6.0f, ForceMode.Impulse);
 		}
 
 		// apply lingering particle effect for a smaller radius
 		Collider[] lcolliders = Physics.OverlapSphere(lastKnownPoint, this.radius / 4);
 		foreach (Collider c in lcolliders) {
 			// skip all colliders without a rigidbody, so we don't explode static elements
-			if (c.GetComponent<Rigidbody>() == null) continue;
+			if (c.attachedRigidbody == null) continue;
 			Debug.Log(c);
 
 			// add lingering particle to collider
