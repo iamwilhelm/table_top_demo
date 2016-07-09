@@ -31,6 +31,10 @@ public class HandController : MonoBehaviour {
 
 			float minDistance = float.MaxValue;
 			float distance;
+
+			Debug.Log(objectsHoveringOver.Count);
+
+			closestItem = null;
 			foreach (InteractableItem item in objectsHoveringOver) {
 				distance = (item.transform.position - transform.position).sqrMagnitude;
 				if (distance < minDistance) {
