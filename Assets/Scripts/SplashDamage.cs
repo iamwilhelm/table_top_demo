@@ -6,6 +6,7 @@ public class SplashDamage : MonoBehaviour {
 
 	public float radius;
 	public float force;
+	public float popup;
 	public GameObject LingeringParticle;
 
 	private ParticleSystem pSystem;
@@ -38,9 +39,11 @@ public class SplashDamage : MonoBehaviour {
 		foreach (Collider c in colliders) {
 			// skip all colliders without a rigidbody, so we don't explode static elements
 			if (c.GetComponent<Rigidbody>() == null) continue;
+			// don't blow away the player's hand
+			if (c.gameObject.CompareTag("Player")) continue;
 			Debug.Log(c);
 			// push all within the splash damage radius out
-			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, 6.0f, ForceMode.Impulse);
+			c.GetComponent<Rigidbody>().AddExplosionForce(force, lastKnownPoint, radius, popup, ForceMode.Impulse);
 		}
 
 		// apply lingering particle effect for a smaller radius

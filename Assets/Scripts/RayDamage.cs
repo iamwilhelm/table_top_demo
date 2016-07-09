@@ -25,6 +25,8 @@ public class RayDamage : MonoBehaviour {
 
 		foreach (Collider c in colliders) {
 			if (c.GetComponent<Rigidbody>() == null) continue;
+			// don't blow away the player's hand
+			if (c.gameObject.CompareTag("Player")) continue;
 			Debug.Log(c);
 
 			c.GetComponent<Rigidbody>().AddForce(transform.forward * force, ForceMode.Impulse);
