@@ -55,7 +55,7 @@ public class SplashDamage : MonoBehaviour {
 
 			// add lingering particle to collider
 			GameObject effect = Instantiate(effectParticleSystem, c.transform.position, c.transform.rotation) as GameObject;
-			effect.transform.parent = c.transform;
+			effect.transform.parent = c.gameObject.transform;
 			Destroy(effect, 10);
 		}
 

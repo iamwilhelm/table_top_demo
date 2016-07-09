@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(Rigidbody))]
 public class InteractableItem : MonoBehaviour {
 
 	private Rigidbody rb;

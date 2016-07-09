@@ -5,6 +5,7 @@ public class RayDamage : MonoBehaviour {
 
 	public float force;
 	public float radius;
+	public GameObject effectParticleSystem;
 
 	// Use this for initialization
 	void Start () {
@@ -30,6 +31,19 @@ public class RayDamage : MonoBehaviour {
 			Debug.Log(c);
 
 			c.GetComponent<Rigidbody>().AddForce(transform.forward * force, ForceMode.Impulse);
+
+			// add lingering particle effect
+			if (effectParticleSystem != null) {
+				GameObject effect = Instantiate(effectParticleSystem, c.transform.position, c.transform.rotation) as GameObject;
+				effect.transform.parent = c.gameObject.transform;
+				Destroy(effect, 10);
+			}
+
+			// TODO abstract the effect of spell out of the ray damage
+			Levitatable levitation = c.GetComponent<Levitatable>();
+			if (levitation != null) {
+				levitation.activate(!levitation.isActive());
+			}
 		}
 	}
 }
