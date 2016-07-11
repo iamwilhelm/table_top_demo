@@ -4,6 +4,7 @@ using System.Collections;
 [RequireComponent(typeof(Rigidbody))]
 public class Levitatable : MonoBehaviour {
 
+	public float multiplier;
 	public bool active;
 	private Rigidbody rb;
 
@@ -13,18 +14,21 @@ public class Levitatable : MonoBehaviour {
 		activate(active);
 	}
 
-	// Update is called once per frame
+	// FIXME this is not working
 	void FixedUpdate () {
 		if (active == false) return;
 
 	  RaycastHit hitInfo;
-		bool isIntersect = Physics.Raycast(transform.position, Vector3.down, out hitInfo);
+		bool isIntersect = Physics.Raycast(transform.position,
+																			 Vector3.down,
+																			 out hitInfo);
 		if (!isIntersect) return;
+		//Debug.Log(hitInfo.distance);
 
-		Debug.Log(hitInfo.distance);
-		Vector3 forceVec = Vector3.up * rb.mass / Mathf.Pow(hitInfo.distance, 2);
-
+		float amp = multiplier * rb.mass / Mathf.Pow( Mathf.Max(hitInfo.distance, 0.2f), 2);
+		Vector3 forceVec = amp * Vector3.up;
 		Debug.Log(forceVec);
+
 		rb.AddForce(forceVec);
 	}
 
