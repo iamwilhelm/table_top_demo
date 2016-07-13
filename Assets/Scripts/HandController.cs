@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public class HandController : MonoBehaviour {
 
 	public SteamVR_TrackedObject trackedObj;
-	private SteamVR_Controller.Device controller;
 
+	private SteamVR_Controller.Device controller;
 	HashSet<InteractableItem> objectsHoveringOver = new HashSet<InteractableItem>();
 	private InteractableItem closestItem;
 	private InteractableItem interactingItem;
@@ -58,6 +58,13 @@ public class HandController : MonoBehaviour {
 			if (interactingItem != null) {
 				interactingItem.OnExitInteraction(this);
 			}
+		}
+
+		// when using the trackpad
+		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad)) {
+		}
+
+		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad)) {
 		}
 
 		// when using the grip
