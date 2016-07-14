@@ -6,23 +6,10 @@ public class MotionController : MonoBehaviour {
 	public SteamVR_TrackedObject trackedObj;
 	private SteamVR_Controller.Device controller;
 
-	public GameObject srcHead;
-	public GameObject srcLeftHand;
-	public GameObject srcRightHand;
-
-	public GameObject tgtHead;
-	public GameObject tgtLeftHand;
-	public GameObject tgtRightHand;
-
-	private RemoteControllable remoteHead;
-	private RemoteControllable remoteLeftHand;
-	private RemoteControllable remoteRightHand;
+	public MotionRecorder motionRecorder;
 
 	// Use this for initialization
 	void Start () {
-		remoteHead = tgtHead.GetComponent<RemoteControllable>();
-		remoteLeftHand = tgtLeftHand.GetComponent<RemoteControllable>();
-		remoteRightHand = tgtRightHand.GetComponent<RemoteControllable>();
 	}
 
 	// Update is called once per frame
@@ -30,25 +17,23 @@ public class MotionController : MonoBehaviour {
 		controller = SteamVR_Controller.Input((int)trackedObj.index);
 		if (controller == null) return;
 
+		// when using the trigger
+		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)) {
+			motionRecorder.RecordTriggerDown(trackedObj);
+		}
+
+		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Trigger)) {
+			motionRecorder.RecordTriggerUp(trackedObj);
+		}
+
 		// when using the trackpad
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad)) {
-			ToggleRecording(remoteHead, srcHead);
-			ToggleRecording(remoteLeftHand, srcLeftHand);
-			ToggleRecording(remoteRightHand, srcRightHand);
+			motionRecorder.ToggleRecording();
 		}
 
 		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad)) {
 		}
 	}
 
-	public void ToggleRecording(RemoteControllable remote, GameObject srcGameObject) {
-		Debug.Log(remote);
-
-		if (remote.IsRecording()) {
-			remote.Playback();
-		} else {
-			remote.Record(srcGameObject);
-		}
-	}
 
 }

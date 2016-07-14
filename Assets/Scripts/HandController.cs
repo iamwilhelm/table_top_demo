@@ -17,19 +17,19 @@ public class HandController : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		controller = SteamVR_Controller.Input((int)trackedObj.index);
+		if (trackedObj == null) return;
 
-		if (controller == null) {
-			Debug.Log("Controller not initialized");
-			return;
-		}
+		controller = SteamVR_Controller.Input((int)trackedObj.index);
+		if (controller == null) return;
 
 		// when using the trigger
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)) {
+			controller.TriggerHapticPulse(2000);
 			pickUp();
 		}
 
 		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Trigger)) {
+			controller.TriggerHapticPulse(2000);
 			letGo();
 		}
 
@@ -51,13 +51,8 @@ public class HandController : MonoBehaviour {
 	}
 
 	public void pickUp() {
-		Debug.Log("trigger and there is object");
-		controller.TriggerHapticPulse(2000);
-
 		float minDistance = float.MaxValue;
 		float distance;
-
-		Debug.Log(objectsHoveringOver.Count);
 
 		closestItem = null;
 		foreach (InteractableItem item in objectsHoveringOver) {
@@ -78,8 +73,6 @@ public class HandController : MonoBehaviour {
 	}
 
 	public void letGo() {
-		controller.TriggerHapticPulse(2000);
-
 		if (interactingItem != null) {
 			interactingItem.OnExitInteraction(this);
 		}
