@@ -26,38 +26,11 @@ public class HandController : MonoBehaviour {
 
 		// when using the trigger
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Trigger)) {
-			Debug.Log("trigger and there is object");
-			controller.TriggerHapticPulse(2000);
-
-			float minDistance = float.MaxValue;
-			float distance;
-
-			Debug.Log(objectsHoveringOver.Count);
-
-			closestItem = null;
-			foreach (InteractableItem item in objectsHoveringOver) {
-				distance = (item.transform.position - transform.position).sqrMagnitude;
-				if (distance < minDistance) {
-					minDistance = distance;
-					closestItem = item;
-				}
-			}
-			interactingItem = closestItem;
-
-			if (interactingItem) {
-				if (interactingItem.IsInteracting()) {
-					interactingItem.OnExitInteraction(this);
-				}
-				interactingItem.OnEnterInteraction(this);
-			}
+			pickUp();
 		}
 
 		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Trigger)) {
-			controller.TriggerHapticPulse(2000);
-
-			if (interactingItem != null) {
-				interactingItem.OnExitInteraction(this);
-			}
+			letGo();
 		}
 
 		// when using the trackpad
@@ -74,6 +47,41 @@ public class HandController : MonoBehaviour {
 
 		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Grip)) {
 			controller.TriggerHapticPulse(2000);
+		}
+	}
+
+	public void pickUp() {
+		Debug.Log("trigger and there is object");
+		controller.TriggerHapticPulse(2000);
+
+		float minDistance = float.MaxValue;
+		float distance;
+
+		Debug.Log(objectsHoveringOver.Count);
+
+		closestItem = null;
+		foreach (InteractableItem item in objectsHoveringOver) {
+			distance = (item.transform.position - transform.position).sqrMagnitude;
+			if (distance < minDistance) {
+				minDistance = distance;
+				closestItem = item;
+			}
+		}
+		interactingItem = closestItem;
+
+		if (interactingItem) {
+			if (interactingItem.IsInteracting()) {
+				interactingItem.OnExitInteraction(this);
+			}
+			interactingItem.OnEnterInteraction(this);
+		}
+	}
+
+	public void letGo() {
+		controller.TriggerHapticPulse(2000);
+
+		if (interactingItem != null) {
+			interactingItem.OnExitInteraction(this);
 		}
 	}
 
