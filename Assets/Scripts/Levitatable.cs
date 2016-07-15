@@ -27,7 +27,7 @@ public class Levitatable : MonoBehaviour {
 
 		float amp = multiplier * rb.mass / Mathf.Pow( Mathf.Max(hitInfo.distance, 0.2f), 2);
 		Vector3 forceVec = amp * Vector3.up;
-		Debug.Log(forceVec);
+		//Debug.Log(forceVec);
 
 		rb.AddForce(forceVec);
 	}
