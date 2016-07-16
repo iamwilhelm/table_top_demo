@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(Rigidbody))]
 public class HandController : MonoBehaviour {
 
 	public SteamVR_TrackedObject trackedObj;
@@ -65,6 +66,8 @@ public class HandController : MonoBehaviour {
 		interactingItem = closestItem;
 
 		if (interactingItem) {
+			makeVisible(false);
+
 			if (interactingItem.IsInteracting()) {
 				interactingItem.OnExitInteraction(this);
 			}
@@ -72,7 +75,19 @@ public class HandController : MonoBehaviour {
 		}
 	}
 
+	private void makeVisible(bool isVisible) {
+		Rigidbody rb = GetComponent<Rigidbody>();
+		rb.detectCollisions = isVisible;
+
+		Component[] meshRenderers = GetComponentsInChildren<MeshRenderer>();
+		foreach (MeshRenderer meshRenderer in meshRenderers) {
+			meshRenderer.enabled = isVisible;
+		}
+	}
+
 	public void letGo() {
+		makeVisible(true);
+
 		if (interactingItem != null) {
 			interactingItem.OnExitInteraction(this);
 		}
