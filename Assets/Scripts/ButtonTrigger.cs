@@ -24,12 +24,10 @@ public class ButtonTrigger : MonoBehaviour {
 	}
 
 	void OnTriggerEnter() {
-		Debug.Log("enter");
 		buttonOn = true;
 	}
 
 	void OnTriggerExit() {
-		Debug.Log("exit");
 		buttonOn = false;
 	}
 }
