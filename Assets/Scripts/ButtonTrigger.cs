@@ -17,17 +17,18 @@ public class ButtonTrigger : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
 		if (buttonOn == true) {
-			buttonSurfaceTf.position = new Vector3(0, min, 0);
+			buttonSurfaceTf.localPosition = new Vector3(0, min, 0);
 		} else {
-			buttonSurfaceTf.position = new Vector3(0, max, 0);
+			buttonSurfaceTf.localPosition = new Vector3(0, max, 0);
 		}
 	}
 
-	void OnTriggerEnter() {
+	void OnTriggerEnter(Collider collider) {
+		// TODO send message to hand controller to vibrate
 		buttonOn = true;
 	}
 
-	void OnTriggerExit() {
+	void OnTriggerExit(Collider collider) {
 		buttonOn = false;
 	}
 }
