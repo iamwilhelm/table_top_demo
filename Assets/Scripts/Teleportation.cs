@@ -6,8 +6,6 @@ public class Teleportation : MonoBehaviour {
 	public ParticleSystem teleportIndicator;
 	public Transform teleportTarget;
 
-	private float teleportTime = -1;
-
 	// Use this for initialization
 	void Start () {
 
@@ -15,22 +13,22 @@ public class Teleportation : MonoBehaviour {
 
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (teleportTime == -1) return;
-		if (Time.fixedTime < teleportTime + 1) return;
-
-		GameObject cameraRig = GameObject.Find("/[CameraRig]");
-		cameraRig.transform.position = teleportTarget.position;
-		cameraRig.transform.rotation = teleportTarget.rotation;
-
-		teleportTime = -1;
 	}
 
 	void OnTriggerEnter(Collider collider) {
-		Debug.Log("enter transporter");
 		if (collider.gameObject.name != "Head") return;
+
+		if (collider.gameObject.tag == "Player") {
+			GameObject cameraRig = GameObject.Find("/[CameraRig]");
+			cameraRig.transform.position = teleportTarget.position;
+			cameraRig.transform.rotation = teleportTarget.rotation;
+		}
+
 		teleportIndicator.Play();
 
-		teleportTime = Time.fixedTime;
+		GameObject ps = Instantiate(teleportIndicator, collider.transform.position, collider.transform.rotation) as GameObject;
+		ps.transform.parent = collider.gameObject.transform;
+		Destroy(ps, 5);
 	}
 
 	void OnTriggerExit() {
