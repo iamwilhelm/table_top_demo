@@ -5,6 +5,7 @@ public class ButtonTrigger : MonoBehaviour {
 
 	public float max = 0.16f;
 	public float min = 0.11f;
+	public Teleportation deviceTeleport;
 
 	private bool buttonOn = false;
 	private Transform buttonSurfaceTf;
@@ -26,9 +27,17 @@ public class ButtonTrigger : MonoBehaviour {
 	void OnTriggerEnter(Collider collider) {
 		// TODO send message to hand controller to vibrate
 		buttonOn = true;
+
+		if (deviceTeleport) {
+			deviceTeleport.TurnOn();
+		}
 	}
 
 	void OnTriggerExit(Collider collider) {
 		buttonOn = false;
+
+		if (deviceTeleport) {
+			deviceTeleport.TurnOff();
+		}
 	}
 }
