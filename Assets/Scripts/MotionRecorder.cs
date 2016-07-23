@@ -15,13 +15,31 @@ public class MotionRecorder : MonoBehaviour {
 	void Start () {
 	}
 
-	// Update is called once per frame
-	void FixedUpdate () {
+	public void ConnectRemote(GameObject clone) {
+		CloneController cloneCtrl = clone.GetComponent<CloneController>();
+
+		// attach left hand tracked object to clone
+		cloneCtrl.AttachTrackedObject("LeftHand", srcLeftHand);
+		// attach right hand tracked object to clone
+		cloneCtrl.AttachTrackedObject("RightHand", srcRightHand);
+
+		// attach left, right, and head of clone to motion recorder
+		remoteLeftHand = cloneCtrl.GetPartMotionPlayer("LeftHand");
+		remoteRightHand = cloneCtrl.GetPartMotionPlayer("RightHand");
+		remoteHead = cloneCtrl.GetPartMotionPlayer("Head");
 	}
 
 	public void ToggleRecording() {
+		Debug.Log(remoteHead);
+		Debug.Log(srcHead);
 		ToggleRecordingFor(remoteHead, srcHead);
+
+		Debug.Log(remoteLeftHand);
+		Debug.Log(srcLeftHand);
 		ToggleRecordingFor(remoteLeftHand, srcLeftHand);
+
+		Debug.Log(remoteRightHand);
+		Debug.Log(srcRightHand);
 		ToggleRecordingFor(remoteRightHand, srcRightHand);
 	}
 

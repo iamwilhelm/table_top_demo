@@ -28,7 +28,7 @@ public class MotionController : MonoBehaviour {
 
 		// when using the trackpad
 		if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad)) {
-			motionRecorder.ToggleRecording();
+			//motionRecorder.ToggleRecording();
 		}
 
 		if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad)) {

@@ -14,12 +14,12 @@ public class MotionPlayer : MonoBehaviour {
 	private List<bool> triggerUps;
 	private HandController handController;
 
-	private int max;
-	private int cursor;
-	private bool isRecording;
-	private bool isPlayback;
-	private bool lastTriggerDown;
-	private bool lastTriggerUp;
+	private int max = 0;
+	private int cursor = 0;
+	private bool isRecording = false;
+	private bool isPlayback = true;
+	private bool lastTriggerDown = false;
+	private bool lastTriggerUp = false;
 
 	// Use this for initialization
 	void Start() {

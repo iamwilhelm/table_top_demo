@@ -20,7 +20,12 @@ public class HandController : MonoBehaviour {
 	void Update () {
 		if (trackedObj == null) return;
 
-		controller = SteamVR_Controller.Input((int)trackedObj.index);
+		try {
+			controller = SteamVR_Controller.Input((int)trackedObj.index);
+		} catch(System.IndexOutOfRangeException err) {
+			// happens when the controllers aren't turned on
+			return;
+		}
 		if (controller == null) return;
 
 		// when using the trigger
