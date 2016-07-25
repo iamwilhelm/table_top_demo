@@ -6,6 +6,7 @@ public class Teleportation : MonoBehaviour {
 	public ParticleSystem availableIndicator;
 	public ParticleSystem teleportIndicator;
 	public Transform teleportTarget;
+	public GameController gameController;
 
 	public bool isOn = true;
 
@@ -44,6 +45,10 @@ public class Teleportation : MonoBehaviour {
 
 		teleportIndicator.Play();
 
+		if (gameController != null) {
+			gameController.StartGame();
+		}
+
 		/*
 		GameObject ps = Instantiate(teleportIndicator, collider.transform.position, collider.transform.rotation) as GameObject;
 		ps.transform.parent = collider.gameObject.transform;
@@ -51,7 +56,7 @@ public class Teleportation : MonoBehaviour {
 		*/
 	}
 
-	void OnTriggerExit() {
+	void OnTriggerExit(Collider collider) {
 	}
 
 }

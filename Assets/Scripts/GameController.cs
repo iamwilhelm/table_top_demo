@@ -9,7 +9,6 @@ public class GameController : MonoBehaviour {
 	public int cloneDuration = 30;
 	public GameObject clonePrefab;
 	public GameObject startLevel;
-	public bool startGame = false;
 
 	private MotionRecorder motionRecorder;
 	private List<GameObject> clones;
@@ -26,33 +25,31 @@ public class GameController : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
-		if (startGame == true) {
-			startGame = false;
-			StartCoroutine(SpawnClones());
-		}
+	}
+
+	public void StartGame() {
+		StartCoroutine(SpawnClones());
 	}
 
 	// Update is called once per frame
 	IEnumerator SpawnClones() {
 
 		for (int i = 0; i < cloneNumber; i++) {
-			Debug.Log(this.clones[0]);
-			GameObject clone = clones[i];
-
 			// attach next clone to motion recorder
+			GameObject clone = clones[i];
 			motionRecorder.ConnectRemote(clone);
-
-			// reset player position
-			Debug.Log("reset player");
-			ResetPlayer();
 
 			// reset world positions
 			Debug.Log("reset world positions");
 			ResetWorld();
 
+			// reset player position
+			Debug.Log("reset player");
+			ResetPlayer();
+
 			// start recording
 			Debug.Log("start recording");
-			motionRecorder.ToggleRecording();
+			motionRecorder.RecordMotion();
 
 			Debug.Log("ticking down");
 			yield return new WaitForSeconds(cloneDuration);
@@ -74,10 +71,9 @@ public class GameController : MonoBehaviour {
 	}
 
 	void ResetWorld() {
-		Debug.Log("reset world");
-		foreach (GameObject gameObj in this.clones) {
-			CloneController cloneCtrl = gameObj.GetComponent<CloneController>();
-			cloneCtrl.ResetPlayback();
+		foreach (GameObject clone in this.clones) {
+			CloneController cloneCtrl = clone.GetComponent<CloneController>();
+			cloneCtrl.RewindPlayback();
 		}
 	}
 

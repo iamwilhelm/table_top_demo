@@ -7,10 +7,11 @@ public class CloneController : MonoBehaviour {
 	void Start () {
 	}
 
-	public void ResetPlayback() {
+	public void RewindPlayback() {
 		// find all motion playbacks in children and set to playback
 		Component[] motionPlayers = GetComponentsInChildren<MotionPlayer>();
 		foreach (MotionPlayer mp in motionPlayers) {
+			mp.Rewind();
 			mp.Playback();
 		}
 	}

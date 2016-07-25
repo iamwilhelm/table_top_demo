@@ -30,25 +30,23 @@ public class MotionRecorder : MonoBehaviour {
 	}
 
 	public void ToggleRecording() {
-		Debug.Log(remoteHead);
-		Debug.Log(srcHead);
-		ToggleRecordingFor(remoteHead, srcHead);
-
-		Debug.Log(remoteLeftHand);
-		Debug.Log(srcLeftHand);
 		ToggleRecordingFor(remoteLeftHand, srcLeftHand);
-
-		Debug.Log(remoteRightHand);
-		Debug.Log(srcRightHand);
 		ToggleRecordingFor(remoteRightHand, srcRightHand);
+		ToggleRecordingFor(remoteHead, srcHead);
 	}
 
 	void ToggleRecordingFor(MotionPlayer remote, SteamVR_TrackedObject srcTrackedObj) {
 		if (remote.IsRecording()) {
 			remote.Playback();
 		} else {
-			remote.Record(srcTrackedObj.gameObject);
+			remote.RecordMotion(srcTrackedObj.gameObject);
 		}
+	}
+
+	public void RecordMotion() {
+		remoteHead.RecordMotion(srcHead.gameObject);
+		remoteLeftHand.RecordMotion(srcLeftHand.gameObject);
+		remoteRightHand.RecordMotion(srcRightHand.gameObject);
 	}
 
 	public void RecordTriggerDown(SteamVR_TrackedObject trackedObj) {

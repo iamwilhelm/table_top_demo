@@ -14,10 +14,10 @@ public class MotionPlayer : MonoBehaviour {
 	private List<bool> triggerUps;
 	private HandController handController;
 
-	private int max = 0;
-	private int cursor = 0;
-	private bool isRecording = false;
-	private bool isPlayback = true;
+	public int max = 0;
+	public int cursor = 0;
+	public bool isRecording = false;
+	public bool isPlayback = true;
 	private bool lastTriggerDown = false;
 	private bool lastTriggerUp = false;
 
@@ -41,13 +41,13 @@ public class MotionPlayer : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate() {
 		if (IsRecording()) {
-			RecordMotion();
+			RecordUpdate();
 		} else {
-			PlaybackMotion();
+			PlaybackUpdate();
 		}
 	}
 
-	void RecordMotion() {
+	void RecordUpdate() {
 		if (srcObject == null) {
 			Debug.Log("src Object doesn't exist!");
 			return;
@@ -70,7 +70,7 @@ public class MotionPlayer : MonoBehaviour {
 		lastTriggerUp = true;
 	}
 
-	void PlaybackMotion() {
+	void PlaybackUpdate() {
 		if (cursor < max && cursor < max) {
 			transform.position = objectPositions[cursor];
 			transform.rotation = objectRotations[cursor];
@@ -89,24 +89,28 @@ public class MotionPlayer : MonoBehaviour {
 		}
 	}
 
-	public void Record(GameObject src) {
-		Debug.Log("Now Record");
+	public void RecordMotion(GameObject src) {
 		srcObject = src;
 		isRecording = true;
 		isPlayback = false;
+		Clear();
+	}
+
+	public void Playback() {
+		isRecording = false;
+		isPlayback = true;
+	}
+
+	public void Rewind() {
+		cursor = 0;
+	}
+
+	public void Clear() {
+		max = 0;
 		objectPositions.Clear();
 		objectRotations.Clear();
 		triggerDowns.Clear();
 		triggerUps.Clear();
-		cursor = 0;
-		max = 0;
-	}
-
-	public void Playback() {
-		Debug.Log("Now Playback");
-		isRecording = false;
-		isPlayback = true;
-		cursor = 0;
 	}
 
 	public bool IsRecording() {
