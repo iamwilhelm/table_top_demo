@@ -40,22 +40,17 @@ public class GameController : MonoBehaviour {
 			motionRecorder.ConnectRemote(clone);
 
 			// reset world positions
-			Debug.Log("reset world positions");
 			ResetWorld();
 
 			// reset player position
-			Debug.Log("reset player");
 			ResetPlayer();
 
 			// start recording
-			Debug.Log("start recording");
 			motionRecorder.RecordMotion();
 
-			Debug.Log("ticking down");
 			yield return new WaitForSeconds(cloneDuration);
 
 			// stop recording
-			Debug.Log("stop recording");
 			motionRecorder.ToggleRecording();
 		}
 	}
@@ -74,6 +69,17 @@ public class GameController : MonoBehaviour {
 		foreach (GameObject clone in this.clones) {
 			CloneController cloneCtrl = clone.GetComponent<CloneController>();
 			cloneCtrl.RewindPlayback();
+		}
+
+		int i = 0;
+		foreach (GameObject gameObj in GameObject.FindGameObjectsWithTag("Dynamic")) {
+			i += 1;
+			Resettable resettableObj = gameObj.GetComponent<Resettable>();
+			Debug.Log(i);
+			Debug.Log(resettableObj);
+			if (resettableObj == null) continue;
+			Debug.Log("resetted!");
+			resettableObj.ResetState();
 		}
 	}
 

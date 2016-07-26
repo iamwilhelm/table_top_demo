@@ -23,7 +23,8 @@ public class Collectable : MonoBehaviour {
 	void FixedUpdate () {
 		if (collectedTime == -1) return;
 		if (Time.fixedTime > collectedTime + 2.0f) {
-			gameObject.SetActive(false);
+			rb.isKinematic = true;
+			rb.useGravity = false;
 		} else if (Time.fixedTime > collectedTime + 0.8f) {
 			meshRen.enabled = false;
 		}
@@ -36,6 +37,13 @@ public class Collectable : MonoBehaviour {
 		Vector3 popForce = new Vector3(0, 4 * rb.mass, 0);
 		rb.AddForce(popForce, ForceMode.Impulse);
 		dissolve.Play();
+	}
+
+	public void ResetState() {
+		collectedTime = -1;
+		rb.isKinematic = true;
+		rb.useGravity = false;
+		meshRen.enabled = true;
 	}
 
 }
