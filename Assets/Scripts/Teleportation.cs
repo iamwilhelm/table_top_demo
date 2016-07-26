@@ -39,24 +39,28 @@ public class Teleportation : MonoBehaviour {
 
 		if (collider.gameObject.tag == "Player") {
 			GameObject cameraRig = GameObject.Find("/[CameraRig]");
-			cameraRig.transform.position = teleportTarget.position;
-			cameraRig.transform.rotation = teleportTarget.rotation;
+			ParticleSystem arrivalIndicator = cameraRig.GetComponentInChildren<ParticleSystem>();
+			arrivalIndicator.Play();
+			TeleportPlayer(cameraRig);
+		} else if (collider.gameObject.tag == "Clone") {
+			Debug.Log("In clone");
+			CloneController cloneCtrl = collider.gameObject.GetComponentInParent<CloneController>();
+			cloneCtrl.PlayArrivalIndicator();
 		}
 
+		// play teleportation on player/clone
+		teleportIndicator.time = 2;
 		teleportIndicator.Play();
 
 		if (gameController != null) {
 			gameController.StartGame();
 		}
-
-		/*
-		GameObject ps = Instantiate(teleportIndicator, collider.transform.position, collider.transform.rotation) as GameObject;
-		ps.transform.parent = collider.gameObject.transform;
-		Destroy(ps, 5);
-		*/
 	}
 
-	void OnTriggerExit(Collider collider) {
+	void TeleportPlayer(GameObject cameraRig) {
+		// move the camera rig
+		cameraRig.transform.position = teleportTarget.position;
+		cameraRig.transform.rotation = teleportTarget.rotation;
 	}
 
 }

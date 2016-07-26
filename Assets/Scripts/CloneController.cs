@@ -7,6 +7,11 @@ public class CloneController : MonoBehaviour {
 	void Start () {
 	}
 
+	public void PlayArrivalIndicator() {
+		ParticleSystem arrivalIndicator = GetComponentInChildren<ParticleSystem>();
+		arrivalIndicator.Play();
+	}
+
 	public void RewindPlayback() {
 		// find all motion playbacks in children and set to playback
 		Component[] motionPlayers = GetComponentsInChildren<MotionPlayer>();
@@ -49,6 +54,9 @@ public class CloneController : MonoBehaviour {
 		} else {
 			return null;
 		}
+	}
+
+	public void PlayTeleportation() {
 	}
 
 }
