@@ -61,6 +61,8 @@ public class GameController : MonoBehaviour {
 
 	void ResetPlayer() {
 		GameObject cameraRig = GameObject.Find("/[CameraRig]");
+		ParticleSystem arrivalIndicator = cameraRig.GetComponentInChildren<ParticleSystem>();
+		arrivalIndicator.Play();
 		cameraRig.transform.position = startLevel.transform.position;
 		cameraRig.transform.rotation = Quaternion.identity;
 	}
