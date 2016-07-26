@@ -71,14 +71,9 @@ public class GameController : MonoBehaviour {
 			cloneCtrl.RewindPlayback();
 		}
 
-		int i = 0;
 		foreach (GameObject gameObj in GameObject.FindGameObjectsWithTag("Dynamic")) {
-			i += 1;
 			Resettable resettableObj = gameObj.GetComponent<Resettable>();
-			Debug.Log(i);
-			Debug.Log(resettableObj);
 			if (resettableObj == null) continue;
-			Debug.Log("resetted!");
 			resettableObj.ResetState();
 		}
 	}
