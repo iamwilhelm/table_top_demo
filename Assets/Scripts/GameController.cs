@@ -56,7 +56,10 @@ public class GameController : MonoBehaviour {
 	}
 
 	GameObject CreateClone(int num) {
-		return Instantiate(clonePrefab, new Vector3(num, -10, 0), Quaternion.identity) as GameObject;
+		GameObject clone = Instantiate(clonePrefab, new Vector3(num, -40, 0), Quaternion.identity) as GameObject;
+		CloneController cloneCtrl = clone.GetComponent<CloneController>();
+		cloneCtrl.SetNumber(num + 1);
+		return clone;
 	}
 
 	void ResetPlayer() {

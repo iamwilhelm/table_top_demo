@@ -3,8 +3,16 @@ using System.Collections;
 
 public class CloneController : MonoBehaviour {
 
+	public int number;
+
 	// Use this for initialization
 	void Start () {
+	}
+
+	public void SetNumber(int num) {
+		this.number = num;
+		TextMesh textMesh = GetComponentInChildren<TextMesh>();
+		textMesh.text = num.ToString();
 	}
 
 	public void PlayArrivalIndicator() {
