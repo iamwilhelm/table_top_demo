@@ -1,4 +1,4 @@
-﻿//========= Copyright 2015, Valve Corporation, All rights reserved. ===========
+﻿//======= Copyright (c) Valve Corporation, All rights reserved. ===============
 //
 // Purpose: Wrapper for working with SteamVR controller input
 //
@@ -221,7 +221,7 @@ public class SteamVR_Controller
 					score = (cross.y < 0.0f) ? 2.0f - dot : dot;
 				}
 			}
-
+			
 			if (score > best)
 			{
 				result = i;
@@ -232,3 +232,4 @@ public class SteamVR_Controller
 		return result;
 	}
 }
+
