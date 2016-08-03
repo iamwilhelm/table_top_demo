@@ -53,6 +53,7 @@ public class InteractableItem : MonoBehaviour {
 	public void OnEnterInteraction(HandController hand) {
 		attachedHand = hand;
 
+		Debug.Log("enter interaction");
 		interactionPoint.position = hand.transform.position;
 		interactionPoint.rotation = hand.transform.rotation;
 		interactionPoint.SetParent(transform, true);
