@@ -8,25 +8,50 @@ using System.Collections.Generic;
 public class Atomic : MonoBehaviour {
 
 	public int atomicNumber = 1;
-	public int valenceElectrons = 1;
+	public float electronegativity = 2.20f;
+
+	// for monitoring
+	public int valenceElectrons;
+	public int valenceHoles;
+	public int totalElectrons;
+	public float netCharge;
+
 	public SphereCollider bodyCollider;
 	public SphereCollider grabCollider;
-	public List<GameObject> bondedAtoms;
-	public List<Atomic> nearbyAtoms;
+	private HashSet<Atomic> bondedAtoms;
+	private HashSet<Atomic> nearbyAtoms;
+	public int bondedAtomsCount;
+	public int nearbyAtomsCount;
 
 	private Rigidbody rb;
+
+	public double COULOMB_CONST;
+	public float ELECTRON_CHARGE;
 
 	// Use this for initialization
 	void Start () {
 		this.rb = GetComponent<Rigidbody>();
-		this.bondedAtoms = new List<GameObject>(8);
-		this.nearbyAtoms= new List<Atomic>(10);
+		this.bondedAtoms = new HashSet<Atomic>();
+		this.nearbyAtoms = new HashSet<Atomic>();
+
+		// units in N * nm^2 / e^2
+		this.COULOMB_CONST = 0.0000000002306f;
+		// units in electron charge
+		this.ELECTRON_CHARGE = -1.0f;
 	}
 
 	void FixedUpdate () {
 		foreach (Atomic atom in this.nearbyAtoms) {
 			rb.AddForce(CoulombForce(atom));
 		}
+
+		// just checking
+		this.totalElectrons = TotalElectrons();
+		this.netCharge = NetCharge();
+		this.bondedAtomsCount = bondedAtoms.Count;
+		this.nearbyAtomsCount = nearbyAtoms.Count;
+		this.valenceElectrons = ValenceElectrons();
+		this.valenceHoles = ValenceHoles();
 	}
 
 	void OnTriggerEnter(Collider collider) {
@@ -43,33 +68,108 @@ public class Atomic : MonoBehaviour {
 		this.nearbyAtoms.Remove(atom);
 	}
 
-	void MakeBondWith(GameObject atom) {
-		// Have we already bonded with this atom?
-		GameObject result = bondedAtoms.Find(e => e == GetComponent<Collider>().gameObject);
-		if (result != null) return;
+	void OnCollisionEnter(Collision collision) {
+		if (collision.gameObject.tag != "Atom") return;
 
-		Debug.Log("bonding");
-		bondedAtoms.Add(atom);
+		Debug.Log(string.Format("Collision: {0} with {1}", this.gameObject, collision.gameObject));
+		Atomic otherAtom = collision.gameObject.GetComponent<Atomic>();
+		MakeBondWith(otherAtom, collision);
+	}
 
-		//atom.transform.SetParent(transform, true);
+	void MakeBondWith(Atomic otherAtom, Collision collision) {
+		// TODO is this a race condition for collision messages?
+		// Return if we've already bonded with this atom
+		if (this.bondedAtoms.Contains(otherAtom)) return;
+
+		// who wants more electrons based on electronegativity?
+		if (this.electronegativity > otherAtom.electronegativity) {
+			// this atom wants to get electrons
+			// how many electrons can I recv and how many can other give?
+			if (this.ValenceHoles() > 0 && otherAtom.ValenceElectrons() > 0) {
+				CreateBond(otherAtom, collision.rigidbody);
+			}
+		} else if (this.electronegativity < otherAtom.electronegativity) {
+			// this atom wants to give electrons
+			// how many electrons can I give and how many can other get?
+			if (this.ValenceElectrons() > 0 && otherAtom.ValenceHoles() > 0) {
+				CreateBond(otherAtom, collision.rigidbody);
+			}
+		} else {
+			// both atoms have the same electronegativity
+			if (this.ValenceElectrons() > 0 &&
+					this.ValenceHoles() > 0 &&
+					otherAtom.ValenceElectrons() > 0 &&
+					otherAtom.ValenceHoles() > 0) {
+				CreateBond(otherAtom, collision.rigidbody);
+			}
+		}
+	}
+
+	void CreateBond(Atomic otherAtom, Rigidbody rigidbody) {
+		// add to list of bonded atoms
+		Debug.Log(string.Format("{0} bonding with {1}", this, otherAtom));
+		this.AddToBondedAtoms(otherAtom);
+		otherAtom.AddToBondedAtoms(this);
+
+		// create spring joint
+		SpringJoint bond = gameObject.AddComponent<SpringJoint>();
+		bond.autoConfigureConnectedAnchor = false;
+		bond.connectedAnchor = new Vector3(0, 0, 0);
+		bond.anchor = new Vector3(0, 0, 0);
+		bond.connectedBody = rigidbody;
+		bond.spring = 1000.0f;
+		bond.damper = 0.5f;
+		bond.minDistance = 0.015f;
+		bond.maxDistance = 0.02f;
+
+	}
+
+	// FIXME technically being reached into from other atom.
+	void AddToBondedAtoms(Atomic otherAtom) {
+		bondedAtoms.Add(otherAtom);
 	}
 
 	void BreakBondWith(GameObject atom) {
 	}
 
 	public Vector3 CoulombForce(Atomic atom) {
-		float charges = Charge() * atom.Charge();
+		float charges = NetCharge() * atom.NetCharge();
 		Vector3 dist = transform.position - atom.transform.position;
 		float distSqr = dist.sqrMagnitude;
 
 		return (0.001f * charges / distSqr) * dist.normalized;
 	}
 
-	public float Charge() {
-		return 1.0f;
+	public float NetCharge() {
+		// netcharge should take into account:
+		// - any extra electrons picked up to make it an ion.
+		// - amount of time electron spends in bonded atom
+		return ELECTRON_CHARGE;
 	}
 
-	public int TotalValenceElectrons() {
+	public int TotalElectrons() {
+		return this.atomicNumber + bondedAtoms.Count;
+	}
+
+	public int ValenceElectrons() {
+		int[] orbitals = { 2, 8, 8 };
+		int electrons = TotalElectrons();
+
+		foreach (int orbital in orbitals) {
+			if ((electrons - orbital) <= 0) {
+				return electrons;
+			}
+			electrons -= orbital;
+		}
+		Debug.Log("ran out of orbitals to subtract electrons");
+		return electrons;
+	}
+
+	public int ValenceHoles() {
+		return TotalShellHoles() - ValenceElectrons();
+	}
+
+	public int TotalShellHoles() {
 		int period = Period();
 		return 2 * period * period;
 	}
