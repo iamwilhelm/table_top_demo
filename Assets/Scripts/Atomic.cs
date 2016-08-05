@@ -127,6 +127,7 @@ public class Atomic : MonoBehaviour {
 		bond.damper = 0.5f;
 		bond.minDistance = 0.015f;
 		bond.maxDistance = 0.02f;
+		bond.breakForce = 250.0f;
 
 	}
 
