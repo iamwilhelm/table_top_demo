@@ -11,15 +11,18 @@ public class Atomic : MonoBehaviour {
 	public float electronegativity = 2.20f;
 
 	// for monitoring
-	public int valenceElectrons;
-	public int valenceHoles;
 	public int totalElectrons;
 	public float netCharge;
+	public int baseValenceElectrons;
+	public int valenceElectrons;
+	public int shareableElectrons;
+	public int shareableHoles;
+	public int valenceOrbitalPositions;
 
 	public SphereCollider bodyCollider;
 	public SphereCollider grabCollider;
-	private HashSet<Atomic> bondedAtoms;
-	private HashSet<Atomic> nearbyAtoms;
+	public HashSet<Atomic> bondedAtoms;
+	public HashSet<Atomic> nearbyAtoms;
 	public int bondedAtomsCount;
 	public int nearbyAtomsCount;
 
@@ -50,8 +53,11 @@ public class Atomic : MonoBehaviour {
 		this.netCharge = NetCharge();
 		this.bondedAtomsCount = bondedAtoms.Count;
 		this.nearbyAtomsCount = nearbyAtoms.Count;
+		this.baseValenceElectrons = BaseValenceElectrons();
 		this.valenceElectrons = ValenceElectrons();
-		this.valenceHoles = ValenceHoles();
+		this.shareableElectrons = ShareableElectrons();
+		this.shareableHoles = ShareableHoles();
+		this.valenceOrbitalPositions = ValenceOrbitalPositions();
 	}
 
 	void OnTriggerEnter(Collider collider) {
@@ -85,21 +91,21 @@ public class Atomic : MonoBehaviour {
 		if (this.electronegativity > otherAtom.electronegativity) {
 			// this atom wants to get electrons
 			// how many electrons can I recv and how many can other give?
-			if (this.ValenceHoles() > 0 && otherAtom.ValenceElectrons() > 0) {
+			if (this.ShareableHoles() > 0 && otherAtom.ShareableElectrons() > 0) {
 				CreateBond(otherAtom, collision.rigidbody);
 			}
 		} else if (this.electronegativity < otherAtom.electronegativity) {
 			// this atom wants to give electrons
 			// how many electrons can I give and how many can other get?
-			if (this.ValenceElectrons() > 0 && otherAtom.ValenceHoles() > 0) {
+			if (this.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
 				CreateBond(otherAtom, collision.rigidbody);
 			}
 		} else {
 			// both atoms have the same electronegativity
-			if (this.ValenceElectrons() > 0 &&
-					this.ValenceHoles() > 0 &&
-					otherAtom.ValenceElectrons() > 0 &&
-					otherAtom.ValenceHoles() > 0) {
+			if (this.ShareableElectrons() > 0 &&
+					this.ShareableHoles() > 0 &&
+					otherAtom.ShareableElectrons() > 0 &&
+					otherAtom.ShareableHoles() > 0) {
 				CreateBond(otherAtom, collision.rigidbody);
 			}
 		}
@@ -151,12 +157,12 @@ public class Atomic : MonoBehaviour {
 		return this.atomicNumber + bondedAtoms.Count;
 	}
 
-	public int ValenceElectrons() {
+	public int BaseValenceElectrons() {
 		int[] orbitals = { 2, 8, 8 };
-		int electrons = TotalElectrons();
+		int electrons = this.atomicNumber;
 
 		foreach (int orbital in orbitals) {
-			if ((electrons - orbital) <= 0) {
+			if ((electrons - orbital) < 0) {
 				return electrons;
 			}
 			electrons -= orbital;
@@ -165,11 +171,19 @@ public class Atomic : MonoBehaviour {
 		return electrons;
 	}
 
-	public int ValenceHoles() {
-		return TotalShellHoles() - ValenceElectrons();
+	public int ValenceElectrons() {
+		return BaseValenceElectrons() + bondedAtoms.Count;
 	}
 
-	public int TotalShellHoles() {
+	public int ShareableElectrons() {
+		return BaseValenceElectrons() - bondedAtoms.Count;
+	}
+
+	public int ShareableHoles() {
+		return ValenceOrbitalPositions() - ValenceElectrons();
+	}
+
+	public int ValenceOrbitalPositions() {
 		int period = Period();
 		return 2 * period * period;
 	}
