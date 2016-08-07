@@ -77,9 +77,14 @@ public class Atomic : MonoBehaviour {
 	void OnCollisionEnter(Collision collision) {
 		if (collision.gameObject.tag != "Atom") return;
 
-		Debug.Log(string.Format("Collision: {0} with {1}", this.gameObject, collision.gameObject));
+		//Debug.Log(string.Format("Collision: {0} with {1}", this.gameObject, collision.gameObject));
 		Atomic otherAtom = collision.gameObject.GetComponent<Atomic>();
 		MakeBondWith(otherAtom, collision);
+	}
+
+	void OnJointBreak(float breakForce) {
+		// BreakBondWith()
+		// trigger particle system
 	}
 
 	void MakeBondWith(Atomic otherAtom, Collision collision) {
@@ -92,13 +97,13 @@ public class Atomic : MonoBehaviour {
 			// this atom wants to get electrons
 			// how many electrons can I recv and how many can other give?
 			if (this.ShareableHoles() > 0 && otherAtom.ShareableElectrons() > 0) {
-				CreateBond(otherAtom, collision.rigidbody);
+				CreateBond(otherAtom, collision);
 			}
 		} else if (this.electronegativity < otherAtom.electronegativity) {
 			// this atom wants to give electrons
 			// how many electrons can I give and how many can other get?
 			if (this.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
-				CreateBond(otherAtom, collision.rigidbody);
+				CreateBond(otherAtom, collision);
 			}
 		} else {
 			// both atoms have the same electronegativity
@@ -106,28 +111,34 @@ public class Atomic : MonoBehaviour {
 					this.ShareableHoles() > 0 &&
 					otherAtom.ShareableElectrons() > 0 &&
 					otherAtom.ShareableHoles() > 0) {
-				CreateBond(otherAtom, collision.rigidbody);
+				CreateBond(otherAtom, collision);
 			}
 		}
 	}
 
-	void CreateBond(Atomic otherAtom, Rigidbody rigidbody) {
+	void CreateBond(Atomic otherAtom, Collision collision) {
+		// How do we know if it's a double or triple bond?
 		// add to list of bonded atoms
 		Debug.Log(string.Format("{0} bonding with {1}", this, otherAtom));
 		this.AddToBondedAtoms(otherAtom);
 		otherAtom.AddToBondedAtoms(this);
+
+		// calculate collision force. The amount determines if it's a single, double, or triple bond
+
 
 		// create spring joint
 		SpringJoint bond = gameObject.AddComponent<SpringJoint>();
 		bond.autoConfigureConnectedAnchor = false;
 		bond.connectedAnchor = new Vector3(0, 0, 0);
 		bond.anchor = new Vector3(0, 0, 0);
-		bond.connectedBody = rigidbody;
-		bond.spring = 1000.0f;
+		bond.connectedBody = collision.rigidbody;
+		bond.spring = BondSpringConstant(otherAtom);
 		bond.damper = 0.5f;
-		bond.minDistance = 0.015f;
-		bond.maxDistance = 0.02f;
-		bond.breakForce = 250.0f;
+		bond.minDistance = 0.0105f;
+		bond.maxDistance = 0.0112f;
+
+		// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
+		bond.breakForce = BondSpringConstant(otherAtom) / 4.0f;
 
 	}
 
@@ -152,6 +163,54 @@ public class Atomic : MonoBehaviour {
 		// - any extra electrons picked up to make it an ion.
 		// - amount of time electron spends in bonded atom
 		return ELECTRON_CHARGE;
+	}
+
+	/*
+	* Computed from Characteristic frequencies.
+	* We only used the stretching vibration frequency here.
+	* https://en.wikipedia.org/wiki/Molecular_vibration#Newtonian_mechanics
+	*
+	*/
+	public float BondSpringConstant(Atomic otherAtom) {
+		Atomic leading = null;
+		Atomic lagging = null;
+		if (this.atomicNumber > otherAtom.atomicNumber) {
+			leading = this;
+			lagging = otherAtom;
+		} else {
+			leading = otherAtom;
+			lagging = this;
+		}
+
+		if (leading.atomicNumber == 6) {
+		  if (lagging.atomicNumber == 1) {
+				// if single bond carbon
+				return 167.79f;
+				// if double bonded carbon
+
+				// if triple bond carbon
+
+			} else if (lagging.atomicNumber == 6) {
+				return 353.75f;
+			} else if (lagging.atomicNumber == 8) {
+				// double bonded
+				return 442.02f;
+			}
+		} else if (leading.atomicNumber == 7) {
+			if (lagging.atomicNumber == 1) {
+				// if single bond
+				return 232.52f;
+			}
+
+		} else if (leading.atomicNumber == 8) {
+			if (lagging.atomicNumber == 1) {
+				// if single bond
+				return 252.14f;
+			}
+		}
+
+		Debug.Log("Spring Const not in table");
+		return 250.0f;
 	}
 
 	public int TotalElectrons() {
@@ -201,4 +260,5 @@ public class Atomic : MonoBehaviour {
 			return 0;
 		}
 	}
+
 }
