@@ -29,6 +29,7 @@ public class Atomic : MonoBehaviour {
 	public int nearbyAtomsCount;
 
 	private Rigidbody rb;
+	private bool isBrokenJoint;
 
 	public double COULOMB_CONST;
 	public float ELECTRON_CHARGE;
@@ -48,6 +49,16 @@ public class Atomic : MonoBehaviour {
 	void FixedUpdate () {
 		foreach (Atomic atom in this.nearbyAtoms) {
 			rb.AddForce(CoulombForce(atom));
+		}
+
+		if (isBrokenJoint == true) {
+			Debug.Log("JOINT BREAK!");
+			isBrokenJoint = false;
+
+			Atomic otherAtom = FindDivorcedAtom();
+			if (otherAtom == null) return;
+
+			BreakBondWith(otherAtom);
 		}
 
 		// just checking
@@ -87,8 +98,7 @@ public class Atomic : MonoBehaviour {
 	}
 
 	void OnJointBreak(float breakForce) {
-		// BreakBondWith()
-		// trigger particle system
+		isBrokenJoint = true;
 	}
 
 	void MakeBondWith(Atomic otherAtom, Collision collision) {
@@ -97,7 +107,10 @@ public class Atomic : MonoBehaviour {
 
 		// TODO is this a race condition for collision messages?
 		// Return if we've already bonded with this atom
-		if (this.bondedAtoms.ContainsKey(otherAtom)) return;
+		if (this.bondedAtoms.ContainsKey(otherAtom)) {
+			Debug.Log("Already bonded to atom");
+			return;
+		}
 
 		// who wants more electrons based on electronegativity?
 		if (this.electronegativity > otherAtom.electronegativity) {
@@ -105,16 +118,18 @@ public class Atomic : MonoBehaviour {
 			// how many electrons can I recv and how many can other give?
 			if (this.ShareableHoles() > 0 && otherAtom.ShareableElectrons() > 0) {
 				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableHoles(), otherAtom.ShareableElectrons() });
-				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
 				CreateBond(bondOrder, otherAtom, collision);
+			} else {
+				Debug.Log(string.Format("Want Get electron, but this.holes: {0} :: other: {1}", this.ShareableHoles(), otherAtom.ShareableElectrons()));
 			}
 		} else if (this.electronegativity < otherAtom.electronegativity) {
 			// this atom wants to give electrons
 			// how many electrons can I give and how many can other get?
 			if (this.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
 				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
-				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
 				CreateBond(bondOrder, otherAtom, collision);
+			} else {
+				Debug.Log(string.Format("Want Give electron, but this.holes: {0} :: other: {1}", this.ShareableElectrons(), otherAtom.ShareableHoles()));
 			}
 		} else {
 			// both atoms have the same electronegativity
@@ -132,8 +147,9 @@ public class Atomic : MonoBehaviour {
 					bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
 				}
 
-				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
 				CreateBond(bondOrder, otherAtom, collision);
+			} else {
+				Debug.Log("no shareable electrons or holes in either atom");
 			}
 		}
 	}
@@ -145,50 +161,85 @@ public class Atomic : MonoBehaviour {
 		otherAtom.AddToBondedAtoms(bondOrder, this);
 
 		// create a particle effect to indicate bond order
-		GameObject prefab;
-		if (bondOrder == 3) {
-			prefab = (GameObject)Resources.Load("TripleBondEnergy");
-		} else if (bondOrder == 2) {
-			prefab = (GameObject)Resources.Load("DoubleBondEnergy");
-		} else {
-			prefab = (GameObject)Resources.Load("SingleBondEnergy");
-		}
+		GameObject prefab = GetBondEnergyPrefab(bondOrder);
 		Vector3 bondPosition = Vector3.Lerp(this.transform.position, otherAtom.transform.position, 0.5f);
 		GameObject effect = Instantiate(prefab, bondPosition, Quaternion.identity) as GameObject;
 		Destroy(effect, 2);
 
-		Debug.Log(string.Format("Creating bond of order {0}", bondOrder));
-		// create the same number of springs are there are bond orders
-		for (int i = 0; i < bondOrder; i++) {
-			Debug.Log(string.Format("Creating Spring"));
-			// create spring joint
-			SpringJoint bond = gameObject.AddComponent<SpringJoint>();
-			bond.autoConfigureConnectedAnchor = false;
-			bond.connectedAnchor = new Vector3(0, 0, 0);
-			bond.anchor = new Vector3(0, 0, 0);
-			bond.connectedBody = collision.rigidbody;
-			bond.spring = BondSpringConstant(otherAtom);
-			bond.damper = 0.5f;
-			bond.minDistance = 0.0f; //0.0105f;
-			bond.maxDistance = 0.0f; //0.0112f;
-
-			// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
-			// But if it's a double or triple bond, it breaks at quarter, half, and 3/4 of meter force
-			bond.breakForce = BondSpringConstant(otherAtom) * bondOrder / 4.0f;
-		}
+		Debug.Log(string.Format("Creating bond of order: {0}", bondOrder));
+		CreateSpringJoint(bondOrder, otherAtom);
 	}
 
-	void BreakBondWith(GameObject atom) {
+	void CreateSpringJoint(int bondOrder, Atomic otherAtom) {
+		// create spring joint
+		SpringJoint bond = gameObject.AddComponent<SpringJoint>();
+		bond.autoConfigureConnectedAnchor = false;
+		bond.connectedAnchor = new Vector3(0, 0, 0);
+		bond.anchor = new Vector3(0, 0, 0);
+		bond.connectedBody = otherAtom.GetComponent<Rigidbody>();
+		bond.spring = bondOrder * BondSpringConstant(otherAtom);
+		bond.damper = 0.5f;
+		bond.minDistance = 0.0f; //0.0105f;
+		bond.maxDistance = 0.0f; //0.0112f;
+
+		// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
+		// But if it's a double or triple bond, it breaks at quarter, half, and 3/4 of meter force
+		bond.breakForce = bondOrder * BondSpringConstant(otherAtom) / 4.0f;
+		Debug.Log(string.Format("Creating spring with break: {0}", bond.breakForce));
+
+	}
+
+	void BreakBondWith(Atomic otherAtom) {
+
+		// decrement or remove record of bondage to each other
+		this.RemoveFromBondedAtoms(otherAtom);
+		otherAtom.RemoveFromBondedAtoms(this);
+
+		// trigger particle system
+		GameObject prefab = GetBondEnergyPrefab(1); //only get the first bond order energy
+		Vector3 bondPosition = Vector3.Lerp(this.transform.position, otherAtom.transform.position, 0.5f);
+		GameObject effect = Instantiate(prefab, bondPosition, Quaternion.identity) as GameObject;
+		Destroy(effect, 2);
+
+		// NOTE Don't need to remove spring, because unity takes care of it.
+	}
+
+	Atomic FindDivorcedAtom() {
+		SpringJoint[] springJoints = GetComponents<SpringJoint>();
+		HashSet<Atomic> attachedAtoms = new HashSet<Atomic>();
+		foreach (SpringJoint joint in springJoints) {
+			attachedAtoms.Add(joint.connectedBody.GetComponent<Atomic>());
+		}
+
+		foreach (Atomic bondedAtom in this.bondedAtoms.Keys) {
+			Debug.Log(string.Format("bondedAtom {0}", bondedAtom));
+			if (!attachedAtoms.Contains(bondedAtom)) {
+				Debug.Log(string.Format("Divorced Atom: {0}", bondedAtom));
+				return bondedAtom;
+			}
+		}
+
+		return null;
+	}
+
+	GameObject GetBondEnergyPrefab(int bondOrder) {
+		if (bondOrder == 3) {
+			return (GameObject)Resources.Load("TripleBondEnergy");
+		} else if (bondOrder == 2) {
+			return (GameObject)Resources.Load("DoubleBondEnergy");
+		} else {
+			return (GameObject)Resources.Load("SingleBondEnergy");
+		}
 	}
 
 	int BondOrderEnergy(Vector3 impulse) {
 		float impulseForceMagnitude = (impulse * Time.fixedDeltaTime).magnitude;
 		Debug.Log(string.Format("Impulse Force: {0}", impulseForceMagnitude));
-		if (impulseForceMagnitude < 0.01f) {
+		if (impulseForceMagnitude < 0.02f) {
 			return 1;
-		} else if (impulseForceMagnitude < 0.02f) {
+		} else if (impulseForceMagnitude < 0.04f) {
 			return 2;
-		} else if (impulseForceMagnitude < 0.03f) {
+		} else if (impulseForceMagnitude < 0.10f) {
 			return 3;
 		} else {
 			Debug.Log("crazy bond order of 4!");
@@ -198,8 +249,25 @@ public class Atomic : MonoBehaviour {
 
 	// FIXME technically being reached into from other atom.
 	void AddToBondedAtoms(int bondOrder, Atomic otherAtom) {
-		bondedAtoms.Add(otherAtom, bondOrder);
+		this.bondedAtoms.Add(otherAtom, bondOrder);
 	}
+
+	// FIXME
+	void RemoveFromBondedAtoms(Atomic otherAtom) {
+		// find the atom in bonded Atoms
+		int sharedElectrons;
+		bool exists = this.bondedAtoms.TryGetValue(otherAtom, out sharedElectrons);
+		if (!exists) return;
+
+		// and decrement count. If zero, remove from bonded Atoms
+		if (sharedElectrons == 0) {
+			this.bondedAtoms.Remove(otherAtom);
+		} else {
+			this.bondedAtoms[otherAtom] = sharedElectrons - 1;
+			CreateSpringJoint(sharedElectrons - 1, otherAtom);
+		}
+	}
+
 
 	public Vector3 CoulombForce(Atomic atom) {
 		float charges = NetCharge() * atom.NetCharge();
