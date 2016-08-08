@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -21,7 +23,7 @@ public class Atomic : MonoBehaviour {
 
 	public SphereCollider bodyCollider;
 	public SphereCollider grabCollider;
-	public HashSet<Atomic> bondedAtoms;
+	public Dictionary<Atomic, int> bondedAtoms; // values are number of shared electrons
 	public HashSet<Atomic> nearbyAtoms;
 	public int bondedAtomsCount;
 	public int nearbyAtomsCount;
@@ -34,7 +36,7 @@ public class Atomic : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		this.rb = GetComponent<Rigidbody>();
-		this.bondedAtoms = new HashSet<Atomic>();
+		this.bondedAtoms = new Dictionary<Atomic, int>();
 		this.nearbyAtoms = new HashSet<Atomic>();
 
 		// units in N * nm^2 / e^2
@@ -51,7 +53,7 @@ public class Atomic : MonoBehaviour {
 		// just checking
 		this.totalElectrons = TotalElectrons();
 		this.netCharge = NetCharge();
-		this.bondedAtomsCount = bondedAtoms.Count;
+		this.bondedAtomsCount = SharedElectrons();
 		this.nearbyAtomsCount = nearbyAtoms.Count;
 		this.baseValenceElectrons = BaseValenceElectrons();
 		this.valenceElectrons = ValenceElectrons();
@@ -79,6 +81,8 @@ public class Atomic : MonoBehaviour {
 
 		//Debug.Log(string.Format("Collision: {0} with {1}", this.gameObject, collision.gameObject));
 		Atomic otherAtom = collision.gameObject.GetComponent<Atomic>();
+		//Debug.Log(string.Format("Impulse: {0}", collision.impulse.magnitude));
+		//Debug.Log(string.Format("Force: {0}", (collision.impulse * Time.fixedDeltaTime).magnitude));
 		MakeBondWith(otherAtom, collision);
 	}
 
@@ -88,66 +92,113 @@ public class Atomic : MonoBehaviour {
 	}
 
 	void MakeBondWith(Atomic otherAtom, Collision collision) {
+		// calculate collision force. The amount determines energy required for bond order.
+		int bondEnergyOrder = BondOrderEnergy(collision.impulse);
+
 		// TODO is this a race condition for collision messages?
 		// Return if we've already bonded with this atom
-		if (this.bondedAtoms.Contains(otherAtom)) return;
+		if (this.bondedAtoms.ContainsKey(otherAtom)) return;
 
 		// who wants more electrons based on electronegativity?
 		if (this.electronegativity > otherAtom.electronegativity) {
 			// this atom wants to get electrons
 			// how many electrons can I recv and how many can other give?
 			if (this.ShareableHoles() > 0 && otherAtom.ShareableElectrons() > 0) {
-				CreateBond(otherAtom, collision);
+				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableHoles(), otherAtom.ShareableElectrons() });
+				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
+				CreateBond(bondOrder, otherAtom, collision);
 			}
 		} else if (this.electronegativity < otherAtom.electronegativity) {
 			// this atom wants to give electrons
 			// how many electrons can I give and how many can other get?
 			if (this.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
-				CreateBond(otherAtom, collision);
+				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
+				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
+				CreateBond(bondOrder, otherAtom, collision);
 			}
 		} else {
 			// both atoms have the same electronegativity
-			if (this.ShareableElectrons() > 0 &&
-					this.ShareableHoles() > 0 &&
-					otherAtom.ShareableElectrons() > 0 &&
-					otherAtom.ShareableHoles() > 0) {
-				CreateBond(otherAtom, collision);
+			if (this.ShareableElectrons() > 0 && this.ShareableHoles() > 0 &&
+					otherAtom.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
+
+				int bondOrder = 0;
+				// 2.3 just is an electronegativity boundary that seems to divide between
+				// those that want electrons vs those that give electrons
+				if (this.electronegativity > 2.3f) {
+					// wants to get electrons
+					bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableHoles(), otherAtom.ShareableElectrons() });
+				} else {
+					// wants to give electrons
+					bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
+				}
+
+				Debug.Log(string.Format("Bond Order: {0}", bondOrder));
+				CreateBond(bondOrder, otherAtom, collision);
 			}
 		}
 	}
 
-	void CreateBond(Atomic otherAtom, Collision collision) {
-		// How do we know if it's a double or triple bond?
+	void CreateBond(int bondOrder, Atomic otherAtom, Collision collision) {
 		// add to list of bonded atoms
 		Debug.Log(string.Format("{0} bonding with {1}", this, otherAtom));
-		this.AddToBondedAtoms(otherAtom);
-		otherAtom.AddToBondedAtoms(this);
+		this.AddToBondedAtoms(bondOrder, otherAtom);
+		otherAtom.AddToBondedAtoms(bondOrder, this);
 
-		// calculate collision force. The amount determines if it's a single, double, or triple bond
+		// create a particle effect to indicate bond order
+		GameObject prefab;
+		if (bondOrder == 3) {
+			prefab = (GameObject)Resources.Load("TripleBondEnergy");
+		} else if (bondOrder == 2) {
+			prefab = (GameObject)Resources.Load("DoubleBondEnergy");
+		} else {
+			prefab = (GameObject)Resources.Load("SingleBondEnergy");
+		}
+		Vector3 bondPosition = Vector3.Lerp(this.transform.position, otherAtom.transform.position, 0.5f);
+		GameObject effect = Instantiate(prefab, bondPosition, Quaternion.identity) as GameObject;
+		Destroy(effect, 2);
 
+		Debug.Log(string.Format("Creating bond of order {0}", bondOrder));
+		// create the same number of springs are there are bond orders
+		for (int i = 0; i < bondOrder; i++) {
+			Debug.Log(string.Format("Creating Spring"));
+			// create spring joint
+			SpringJoint bond = gameObject.AddComponent<SpringJoint>();
+			bond.autoConfigureConnectedAnchor = false;
+			bond.connectedAnchor = new Vector3(0, 0, 0);
+			bond.anchor = new Vector3(0, 0, 0);
+			bond.connectedBody = collision.rigidbody;
+			bond.spring = BondSpringConstant(otherAtom);
+			bond.damper = 0.5f;
+			bond.minDistance = 0.0f; //0.0105f;
+			bond.maxDistance = 0.0f; //0.0112f;
 
-		// create spring joint
-		SpringJoint bond = gameObject.AddComponent<SpringJoint>();
-		bond.autoConfigureConnectedAnchor = false;
-		bond.connectedAnchor = new Vector3(0, 0, 0);
-		bond.anchor = new Vector3(0, 0, 0);
-		bond.connectedBody = collision.rigidbody;
-		bond.spring = BondSpringConstant(otherAtom);
-		bond.damper = 0.5f;
-		bond.minDistance = 0.0105f;
-		bond.maxDistance = 0.0112f;
-
-		// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
-		bond.breakForce = BondSpringConstant(otherAtom) / 4.0f;
-
-	}
-
-	// FIXME technically being reached into from other atom.
-	void AddToBondedAtoms(Atomic otherAtom) {
-		bondedAtoms.Add(otherAtom);
+			// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
+			// But if it's a double or triple bond, it breaks at quarter, half, and 3/4 of meter force
+			bond.breakForce = BondSpringConstant(otherAtom) * bondOrder / 4.0f;
+		}
 	}
 
 	void BreakBondWith(GameObject atom) {
+	}
+
+	int BondOrderEnergy(Vector3 impulse) {
+		float impulseForceMagnitude = (impulse * Time.fixedDeltaTime).magnitude;
+		Debug.Log(string.Format("Impulse Force: {0}", impulseForceMagnitude));
+		if (impulseForceMagnitude < 0.01f) {
+			return 1;
+		} else if (impulseForceMagnitude < 0.02f) {
+			return 2;
+		} else if (impulseForceMagnitude < 0.03f) {
+			return 3;
+		} else {
+			Debug.Log("crazy bond order of 4!");
+			return 4;
+		}
+	}
+
+	// FIXME technically being reached into from other atom.
+	void AddToBondedAtoms(int bondOrder, Atomic otherAtom) {
+		bondedAtoms.Add(otherAtom, bondOrder);
 	}
 
 	public Vector3 CoulombForce(Atomic atom) {
@@ -214,7 +265,7 @@ public class Atomic : MonoBehaviour {
 	}
 
 	public int TotalElectrons() {
-		return this.atomicNumber + bondedAtoms.Count;
+		return this.atomicNumber + SharedElectrons();
 	}
 
 	public int BaseValenceElectrons() {
@@ -232,11 +283,15 @@ public class Atomic : MonoBehaviour {
 	}
 
 	public int ValenceElectrons() {
-		return BaseValenceElectrons() + bondedAtoms.Count;
+		return BaseValenceElectrons() + SharedElectrons();
+	}
+
+	public int SharedElectrons() {
+		return bondedAtoms.Values.Aggregate(0, (t, e) => t += e);;
 	}
 
 	public int ShareableElectrons() {
-		return BaseValenceElectrons() - bondedAtoms.Count;
+		return BaseValenceElectrons() - SharedElectrons();
 	}
 
 	public int ShareableHoles() {
