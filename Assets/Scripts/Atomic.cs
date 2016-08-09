@@ -9,8 +9,27 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Atomic))]
 public class Atomic : MonoBehaviour {
 
+
+	// for properties
 	public int atomicNumber = 1;
 	public float electronegativity = 2.20f;
+
+	// private use
+	private Rigidbody rb;
+	private bool isBrokenJoint;
+	private Dictionary<Atomic, int> bondedAtoms; // values are number of shared electrons
+	private HashSet<Atomic> nearbyAtoms;
+
+	// for setup
+	public SphereCollider bodyCollider;
+	public SphereCollider grabCollider;
+	public Atomic doubleBond1;
+	public Atomic doubleBond2;
+	public Atomic singleBond1;
+	public Atomic singleBond2;
+	public Atomic singleBond3;
+	public Atomic singleBond4;
+
 
 	// for monitoring
 	public int totalElectrons;
@@ -20,17 +39,10 @@ public class Atomic : MonoBehaviour {
 	public int shareableElectrons;
 	public int shareableHoles;
 	public int valenceOrbitalPositions;
-
-	public SphereCollider bodyCollider;
-	public SphereCollider grabCollider;
-	public Dictionary<Atomic, int> bondedAtoms; // values are number of shared electrons
-	public HashSet<Atomic> nearbyAtoms;
 	public int bondedAtomsCount;
 	public int nearbyAtomsCount;
 
-	private Rigidbody rb;
-	private bool isBrokenJoint;
-
+	// consts
 	public double COULOMB_CONST;
 	public float ELECTRON_CHARGE;
 
@@ -39,6 +51,13 @@ public class Atomic : MonoBehaviour {
 		this.rb = GetComponent<Rigidbody>();
 		this.bondedAtoms = new Dictionary<Atomic, int>();
 		this.nearbyAtoms = new HashSet<Atomic>();
+
+		if (doubleBond1 != null) CreateBond(2, doubleBond1);
+		if (doubleBond2 != null) CreateBond(2, doubleBond2);
+		if (singleBond1 != null) CreateBond(1, singleBond1);
+		if (singleBond2 != null) CreateBond(1, singleBond2);
+		if (singleBond3 != null) CreateBond(1, singleBond3);
+		if (singleBond4 != null) CreateBond(1, singleBond4);
 
 		// units in N * nm^2 / e^2
 		this.COULOMB_CONST = 0.0000000002306f;
@@ -118,7 +137,7 @@ public class Atomic : MonoBehaviour {
 			// how many electrons can I recv and how many can other give?
 			if (this.ShareableHoles() > 0 && otherAtom.ShareableElectrons() > 0) {
 				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableHoles(), otherAtom.ShareableElectrons() });
-				CreateBond(bondOrder, otherAtom, collision);
+				CreateBond(bondOrder, otherAtom);
 			} else {
 				Debug.Log(string.Format("Want Get electron, but this.holes: {0} :: other: {1}", this.ShareableHoles(), otherAtom.ShareableElectrons()));
 			}
@@ -127,7 +146,7 @@ public class Atomic : MonoBehaviour {
 			// how many electrons can I give and how many can other get?
 			if (this.ShareableElectrons() > 0 && otherAtom.ShareableHoles() > 0) {
 				int bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
-				CreateBond(bondOrder, otherAtom, collision);
+				CreateBond(bondOrder, otherAtom);
 			} else {
 				Debug.Log(string.Format("Want Give electron, but this.holes: {0} :: other: {1}", this.ShareableElectrons(), otherAtom.ShareableHoles()));
 			}
@@ -147,14 +166,14 @@ public class Atomic : MonoBehaviour {
 					bondOrder = Enumerable.Min(new int[] { bondEnergyOrder, this.ShareableElectrons(), otherAtom.ShareableHoles() });
 				}
 
-				CreateBond(bondOrder, otherAtom, collision);
+				CreateBond(bondOrder, otherAtom);
 			} else {
 				Debug.Log("no shareable electrons or holes in either atom");
 			}
 		}
 	}
 
-	void CreateBond(int bondOrder, Atomic otherAtom, Collision collision) {
+	void CreateBond(int bondOrder, Atomic otherAtom) {
 		// add to list of bonded atoms
 		Debug.Log(string.Format("{0} bonding with {1}", this, otherAtom));
 		this.AddToBondedAtoms(bondOrder, otherAtom);
@@ -184,7 +203,7 @@ public class Atomic : MonoBehaviour {
 
 		// FIXME just guessed at what would break a spring. 0.25 of energy to stretch spring 1nm?
 		// But if it's a double or triple bond, it breaks at quarter, half, and 3/4 of meter force
-		bond.breakForce = bondOrder * BondSpringConstant(otherAtom) / 4.0f;
+		bond.breakForce = bondOrder * BondSpringConstant(otherAtom) / 1.0f;
 		Debug.Log(string.Format("Creating spring with break: {0}", bond.breakForce));
 
 	}
@@ -196,7 +215,7 @@ public class Atomic : MonoBehaviour {
 		otherAtom.RemoveFromBondedAtoms(this);
 
 		// trigger particle system
-		GameObject prefab = GetBondEnergyPrefab(1); //only get the first bond order energy
+		GameObject prefab = (GameObject)Resources.Load("BreakBondEnergy");
 		Vector3 bondPosition = Vector3.Lerp(this.transform.position, otherAtom.transform.position, 0.5f);
 		GameObject effect = Instantiate(prefab, bondPosition, Quaternion.identity) as GameObject;
 		Destroy(effect, 2);
